@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d233b">
+  <title>에너지 루프 · Physical AI 교육 실험실</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">본문으로 이동</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="에너지 루프 홈"><span class="brand-icon">↻</span><span>에너지 루프<small>PHYSICAL AI LEARNING LAB</small></span></a>
+    <div class="sidebar-heading"><span class="step-dot">01</span> 실험 준비</div>
+    <form id="config-form">
+      <fieldset><legend>데이터와 예측</legend>
+        <label for="resolution">데이터 간격</label><select id="resolution" name="resolution"><option value="hourly">시간별 · 1시간</option><option value="daily">일별 · 24시간</option></select>
+        <label for="forecast-model">예측 모델</label><select id="forecast-model"><option value="seasonal_naive">전주 같은 시점 · Seasonal Naive</option><option value="weekday_mean">최근 같은 요일 평균</option></select>
+        <p class="field-note">기본 예측은 통계 기준 모델입니다. TSFM·LLM을 실행한 결과가 아닙니다.</p>
+        <div class="data-actions"><button id="demo-button" type="button" class="button quiet">합성 데이터 불러오기</button><label class="button quiet upload-button" for="csv-file">내 CSV 불러오기<input id="csv-file" type="file" accept=".csv,text/csv"></label></div>
+        <button id="example-button" type="button" class="text-button">↓ 합성 예제 CSV 저장</button>
+        <details class="format-help"><summary>CSV 형식과 단위</summary><p><code>timestamp,load_kwh,pv_kwh</code><br>각 행은 해당 구간의 에너지(kWh)입니다. 시간별 예: <code>2026-01-01T00:00:00</code>, 일별 예: <code>2026-01-01</code>. 누락 없는 최소 15일 자료를 사용하세요. kW 입력은 지원하지 않습니다.</p></details>
+      </fieldset>
+      <fieldset><legend>가상 ESS</legend>
+        <div class="input-row"><label for="capacity">용량 <small>kWh</small></label><input id="capacity" type="number" min="1" max="100000" step="1" value="100" required></div>
+        <div class="input-row"><label for="power">충·방전 상한 <small>kW</small></label><input id="power" type="number" min="0.1" max="100000" step="0.1" value="30" required></div>
+        <div class="input-row"><label for="initial-soc">초기 SOC <small>%</small></label><input id="initial-soc" type="number" min="0" max="100" step="1" value="50" required></div>
+        <div class="input-row"><label for="min-soc">최소 SOC <small>%</small></label><input id="min-soc" type="number" min="0" max="99" step="1" value="10" required></div>
+        <div class="input-row"><label for="max-soc">최대 SOC <small>%</small></label><input id="max-soc" type="number" min="1" max="100" step="1" value="90" required></div>
+        <div class="input-row"><label for="efficiency">편도 효율 <small>%</small></label><input id="efficiency" type="number" min="1" max="100" step="1" value="95" required></div>
+        <div class="input-row"><label for="reserve-soc">목표 예비 SOC <small>%</small></label><input id="reserve-soc" type="number" min="0" max="100" step="1" value="30" required></div>
+      </fieldset>
+      <fieldset><legend>오류·외란 실험</legend>
+        <label for="scenario">시나리오</label><select id="scenario"><option value="normal">정상 운전</option><option value="load_surge">부하 증가</option><option value="pv_drop">태양광 발전 감소</option><option value="sensor_freeze">SOC 센서값 정체</option></select>
+        <label for="strength">외란 강도 <output id="strength-value" for="strength">40%</output></label><input id="strength" type="range" min="0.1" max="0.9" step="0.1" value="0.4">
+        <label for="seed">합성 데이터 재현용 시드</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="42" required><p class="field-note">합성 자료의 시드를 바꾸면 데이터가 다시 생성됩니다. 업로드 자료에는 영향을 주지 않습니다.</p>
+      </fieldset>
+      <button id="run-button" class="button primary run-button" type="submit"><span>▶</span> 실험 실행</button>
+      <p class="field-note">동일한 데이터·초기 상태·제약으로 네 정책을 비교합니다.</p>
+    </form>
+    <div class="sidebar-footer">PC 안의 가상 환경에서<br>예측 → 행동 → 피드백을 배웁니다.</div>
+  </aside>
+  <main id="workspace">
+    <header class="page-header"><div><div class="eyebrow">TIMESERIES × ENERGY × ACTION</div><h1>예측이 행동이 되는 순간</h1><p>건물과 태양광의 시계열로 배우는 폐루프 에너지 운영 실험실</p></div><span class="mode-badge"><span></span> SOFTWARE SIMULATION</span></header>
+    <div id="status" class="status" role="status" aria-live="polite">합성 데이터를 준비하고 있습니다…</div>
+    <section class="data-banner" aria-label="데이터 출처"><span id="source-badge" class="source-badge">합성 시연 자료</span><div><strong id="data-description">데이터 준비 중</strong><p id="data-note">실제 캠퍼스의 측정 결과나 현장 제어 실적이 아닙니다.</p></div><span id="data-count" class="data-count"></span></section>
+    <section class="work-heading"><div><span class="step-dot">02</span><h2>운영을 관찰하세요</h2></div><label class="policy-label" for="policy">관찰할 정책<select id="policy"><option value="feedback">예측 + 피드백</option><option value="day_ahead">하루 전 계획 유지</option><option value="reactive">현재값 반응형</option><option value="no_ess">ESS 없음</option></select></label></section>
+    <section class="metrics" aria-label="선택 정책의 운영 결과">
+      <article class="metric"><span>전력망 구매 에너지</span><strong id="metric-import">—</strong><small id="metric-import-note">전체 평가 구간 · kWh</small></article>
+      <article class="metric"><span>태양광 자가소비율</span><strong id="metric-self">—</strong><small>발전량 중 현지 소비·충전 비율</small></article>
+      <article class="metric"><span id="metric-peak-label">최대 구매 전력</span><strong id="metric-peak">—</strong><small id="metric-peak-note">시간 구간 평균의 최댓값 · kW</small></article>
+      <article class="metric"><span>종료 SOC</span><strong id="metric-soc">—</strong><small id="metric-soc-note">다음 구간으로 이어지는 저장 상태</small></article>
+    </section>
+    <section class="panel loop-panel" aria-labelledby="loop-heading"><div class="panel-heading"><div><h3 id="loop-heading">한 단계씩, 폐루프 따라가기</h3><p>기록된 실험을 재생하며 명령과 결과를 구분하세요.</p></div><span id="playback-time" class="time-badge">—</span></div>
+      <div class="loop-flow"><article><span class="flow-number">1 · 입력</span><h4 id="observe-heading">판단에 사용한 정보</h4><p id="flow-observe">과거 관측 · 사전 예측</p></article><span class="flow-arrow" aria-hidden="true">→</span><article><span class="flow-number">2 · 판단</span><h4>운영 에이전트</h4><p id="flow-decide">규칙과 예측으로 제안</p></article><span class="flow-arrow" aria-hidden="true">→</span><article><span class="flow-number">3 · 실행</span><h4>가상 ESS 제어</h4><p id="flow-action">제약을 적용한 충·방전</p></article><span class="flow-arrow" aria-hidden="true">↻</span><article class="feedback-card"><span class="flow-number">4 · 피드백</span><h4>구간 종료 후 결과</h4><p id="flow-feedback">다음 판단에 결과 전달</p></article></div>
+      <p id="event-description" class="event-description">실험 실행 후 각 구간의 상태와 명령이 표시됩니다.</p>
+      <div class="playback-controls"><button id="play-button" type="button" class="button primary small" disabled>▶ 재생</button><button id="reset-button" type="button" class="button quiet small" disabled>↺ 처음</button><input id="timeline" type="range" min="0" max="0" value="0" aria-label="실험 시점 선택" disabled><span id="step-count">0 / 0</span><select id="speed" aria-label="재생 속도"><option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option></select></div>
+    </section>
+    <div class="chart-grid"><section class="panel"><div class="panel-heading"><div><h3>실제 부하와 사전 예측</h3><p id="forecast-description">미래 관측값을 사용하지 않는 예측</p></div><span class="unit-badge">kWh / 구간</span></div><div class="legend"><span class="legend-load">부하</span><span class="legend-pv">태양광</span><span class="legend-dash">점선: 예측</span></div><div id="forecast-chart" class="chart" role="img" aria-label="실제 부하와 태양광 및 예측 에너지 그래프"></div><p id="forecast-error" class="chart-note">예측오차 계산 중</p></section>
+    <section class="panel"><div class="panel-heading"><div><h3>전력망과 배터리의 변화</h3><p>구매 에너지와 실제·관측 SOC</p></div><span class="unit-badge">kWh · %</span></div><div class="legend"><span class="legend-grid">구매 에너지</span><span class="legend-soc">실제 SOC</span><span class="legend-dash">점선: 관측 SOC</span></div><div id="operation-chart" class="chart" role="img" aria-label="전력망 구매 에너지와 실제 및 관측 SOC 그래프"></div><p class="chart-note">SOC는 각 구간 종료 후 상태입니다. 센서 외란 시 관측값과 차이가 날 수 있습니다.</p></section></div>
+    <section class="panel comparison-panel" aria-labelledby="comparison-heading"><div class="panel-heading"><div><h3 id="comparison-heading">같은 조건, 다른 의사결정</h3><p>정책별 결과를 비교하고 종료 잔량도 함께 확인하세요.</p></div><div class="export-actions"><button id="csv-export" type="button" class="button quiet small" disabled>↓ 로그 CSV</button><button id="json-export" type="button" class="button quiet small" disabled>↓ 실험 JSON</button></div></div><div class="table-wrap"><table><thead><tr><th scope="col">운영 정책</th><th scope="col">구매량 <small>kWh</small></th><th scope="col">잉여 송전량 <small>kWh</small></th><th scope="col">자가소비율</th><th id="table-peak" scope="col">최대 구매 <small>kW</small></th><th scope="col">종료 SOC</th><th scope="col">명령 보정 횟수</th></tr></thead><tbody id="comparison-body"></tbody></table></div><div id="storage-note" class="storage-note"></div><p class="comparison-note">구매량 감소에는 배터리 잔량의 소모가 포함될 수 있습니다. 같은 종료 SOC를 보장하는 최적화 실험이 아니므로, 구매량만으로 절감 효과를 결론 내리지 마세요. 요금·비용은 계산하지 않습니다.</p></section>
+    <section class="learning-section" aria-labelledby="learning-heading"><div class="work-heading"><div><span class="step-dot">03</span><h2 id="learning-heading">직접 바꾸고 설명하세요</h2></div><span class="muted">학습 결과는 자동으로 만들어지지 않습니다.</span></div><div class="task-grid"><article class="task-card"><span>MISSION 01</span><h3>예측이 더 좋아지면?</h3><p>예측 모델을 바꿔 부하·발전 오차와 운영 성능을 함께 비교하세요. 예측오차가 줄어도 구매량이 줄지 않는 조건을 찾아보세요.</p></article><article class="task-card"><span>MISSION 02</span><h3>예상보다 흐린 하루</h3><p>태양광 발전 감소를 적용하고 계획 유지와 피드백 정책을 비교하세요. 배터리 용량과 예비 SOC를 바꾸면 무엇이 달라질까요?</p></article><article class="task-card"><span>MISSION 03</span><h3>센서는 멈췄지만</h3><p>SOC 센서값 정체를 선택하세요. 관측 SOC·실제 SOC·제안 명령·적용 명령을 구분하고 보정 원인을 설명하세요.</p></article></div><div class="panel reflection"><label for="reflection">나의 실험 노트</label><textarea id="reflection" rows="4" placeholder="가설 → 바꾼 조건 → 관찰한 결과 → 원인과 한계 순서로 기록하세요. 실험 노트는 이 브라우저 화면에서만 보관됩니다."></textarea><div><p>교수자 평가용 성적·교육 효과는 별도 수업 자료로 수집해야 합니다.</p><button id="reflection-export" type="button" class="button quiet small">↓ 실험 노트 저장</button></div></div></section>
+    <footer class="page-footer"><strong>가상 환경에서 개념을 검증하는 교육용 도구</strong><p>건물 열환경·설비 동특성·현장 통신·실제 제어는 재현하지 않습니다. 일별 데이터에서는 일중 피크나 시간대별 충·방전 효과를 주장할 수 없습니다.</p><p>실험의 데이터 출처, 간격, 정책, 초기 조건을 결과와 함께 기록하세요.</p></footer>
+  </main>
+</body>
+</html>
