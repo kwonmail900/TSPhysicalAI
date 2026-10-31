@@ -1,0 +1,19 @@
+import pandas as pd
+
+# 파일 경로
+file_path = 'C:/Users/김강유/Downloads/'
+
+# 파일명
+file_name = 'DATA.xls'
+
+# 엑셀 파일 경로
+excel_file = file_path + file_name
+
+# CSV 파일 경로
+csv_file = file_path + 'DATA.csv'
+
+# 엑셀 파일 읽기
+data_frame = pd.read_excel(excel_file)
+
+# CSV 파일로 저장
+data_frame.to_csv(csv_file, index=False, encoding='utf-8')
